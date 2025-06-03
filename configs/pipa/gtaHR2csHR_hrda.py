@@ -27,7 +27,7 @@ model = dict(
     # the context crop.
     scales=[1, 0.5],
     # Use a relative crop size of 0.5 (=512/1024) for the detail crop.
-    hr_crop_size=[512, 512],
+    hr_crop_size=[256, 256],
     # Use LR features for the Feature Distance as in the original DAFormer.
     feature_scale=0.5,
     # Make the crop coordinates divisible by 8 (output stride = 4,
@@ -39,8 +39,8 @@ model = dict(
     test_cfg=dict(
         mode='slide',
         batched_slide=True,
-        stride=[512, 512],
-        crop_size=[1024, 1024]))
+        stride=[128, 128],
+        crop_size=[256, 256]))
 data = dict(
     train=dict(
         # Rare Class Sampling
@@ -70,7 +70,7 @@ optimizer = dict(
 n_gpus = 1
 runner = dict(type='IterBasedRunner', max_iters=60000)
 # Logging Configuration
-checkpoint_config = dict(by_epoch=False, interval=60000, max_keep_ckpts=1)
+checkpoint_config = dict(by_epoch=False, interval=5000, max_keep_ckpts=5)
 evaluation = dict(interval=5000, metric='mIoU')
 # Meta Information for Result Analysis
 name = 'gtaHR2csHR_hrda_s0'
