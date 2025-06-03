@@ -1,9 +1,9 @@
 # dataset settings
 dataset_type = 'CityscapesDataset'
-data_root = 'data/cityscapes/'
+data_root = '../../data/cityscapes/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-crop_size = (640, 640)
+crop_size = (512, 512)
 gta_train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations'),
@@ -19,7 +19,7 @@ gta_train_pipeline = [
 cityscapes_train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations'),
-    dict(type='Resize', img_scale=(1280, 640)),
+    dict(type='Resize', img_scale=(1024, 512)),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=1.),
     dict(type='RandomFlip', prob=0.5),
     # dict(type='PhotoMetricDistortion'),  # is applied later in dacs.py
@@ -32,7 +32,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1280, 640),
+        img_scale=(512, 256),
         # MultiScaleFlipAug is disabled by not providing img_ratios and
         # setting flip=False
         # img_ratios=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75],
@@ -46,31 +46,31 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=2,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=1,
     train=dict(
         type='UDADataset',
         source=dict(
             type='GTADataset',
-            data_root='data/gta/',
+            data_root='../../data/gta/',
             img_dir='images',
             ann_dir='labels',
             pipeline=gta_train_pipeline),
         target=dict(
             type='CityscapesDataset',
-            data_root='data/cityscapes/',
+            data_root='../../data/cityscapes/',
             img_dir='leftImg8bit/train',
             ann_dir='gtFine/train',
             pipeline=cityscapes_train_pipeline)),
     val=dict(
         type='CityscapesDataset',
-        data_root='data/cityscapes/',
+        data_root='../../data/cityscapes/',
         img_dir='leftImg8bit/val',
         ann_dir='gtFine/val',
         pipeline=test_pipeline),
     test=dict(
         type='CityscapesDataset',
-        data_root='data/cityscapes/',
+        data_root='../../data/cityscapes/',
         img_dir='leftImg8bit/val',
         ann_dir='gtFine/val',
         pipeline=test_pipeline))
