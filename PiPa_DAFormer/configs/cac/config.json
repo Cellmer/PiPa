@@ -2,7 +2,7 @@
     "name": "CAC",
     "experim_name": "city_cac_deeplabv3+_resnet50_1over8_datalist2",
     "dataset": "cityscapes",
-    "data_dir": "data/cityscapes",
+    "data_dir": "../../data/cityscapes",
     "datalist": 2,
     "n_gpu": 1,
     "n_labeled_examples": 2975,
