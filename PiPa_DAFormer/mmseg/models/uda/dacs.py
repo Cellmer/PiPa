@@ -22,6 +22,7 @@ from torch.nn.modules.dropout import _DropoutNd
 
 from mmseg.core import add_prefix
 from mmseg.models import UDA, build_segmentor
+from mmseg.models.uda.masking_consistency_module import MaskingConsistencyModule
 from mmseg.models.uda.uda_decorator import UDADecorator, get_module
 from mmseg.models.utils.dacs_transforms import (denorm, get_class_masks,
                                                 get_mean_std, strong_transform)
@@ -106,6 +107,8 @@ class DACS(UDADecorator):
         self.pos_thresh_value = 0.9
         self.stride = 8
 
+        self.mic = MaskingConsistencyModule(require_teacher=True, cfg=cfg)
+
     def concat_all_gather(self, tensor):
         """
         Performs all_gather operation on the provided tensors.
@@ -175,7 +178,6 @@ class DACS(UDADecorator):
                 DDP, it means the batch size on each GPU), which is used for
                 averaging the logs.
         """
-
         optimizer.zero_grad()
         log_vars = self(**data_batch)
         optimizer.step()
@@ -645,5 +647,24 @@ class DACS(UDADecorator):
                                  f'{(self.local_iter + 1):06d}_{j}.png'))
                 plt.close()
         self.local_iter += 1
+
+        if self.mic is not None:
+
+            mic_loss = self.mic(
+                self.get_model(),
+                img,
+                img_metas,
+                gt_semantic_seg,
+                target_img,
+                target_img_metas,
+                valid_pseudo_mask=None,
+                pseudo_label=pseudo_label.unsqueeze(1),
+                pseudo_weight=pseudo_weight
+            )
+
+            mic_loss_value, mic_log_vars = self._parse_losses(mic_loss)
+            mic_loss_value.backward()
+            log_vars.update(add_prefix(mic_log_vars, 'mic'))
+
 
         return log_vars

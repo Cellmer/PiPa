@@ -183,6 +183,25 @@ class OverlapPatchEmbed(nn.Module):
         return x, H, W
 
 
+class MFCB(nn.Module):
+    def __init__(self, embed_dim, mask_ratio=0.7):
+        super(MFCB, self).__init__()
+        self.mask_ratio = mask_ratio
+        self.reconstruct = nn.Sequential(
+            nn.Conv2d(embed_dim, embed_dim, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(embed_dim, embed_dim, kernel_size=3, padding=1),
+        )
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        mask = torch.rand(B, 1, H, W, device=x.device) > self.mask_ratio
+        x_masked = x * mask
+
+        x_recon = self.reconstruct(x_masked)
+        return x + x_recon  # combine original and reconstructed features
+
+
 @BACKBONES.register_module()
 class MixVisionTransformer(BaseModule):
 
@@ -317,6 +336,8 @@ class MixVisionTransformer(BaseModule):
         ])
         self.norm4 = norm_layer(embed_dims[3])
 
+        self.mfcb = MFCB(embed_dim=320, mask_ratio=0.7)
+
         # classification head
         # self.head = nn.Linear(embed_dims[3], num_classes) \
         #     if num_classes > 0 else nn.Identity()
@@ -418,6 +439,7 @@ class MixVisionTransformer(BaseModule):
             x = blk(x, H, W)
         x = self.norm3(x)
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
+        x = self.mfcb(x)
         outs.append(x)
 
         # stage 4

@@ -83,6 +83,19 @@ class EncoderDecoder(BaseSegmentor):
             x = self.neck(x)
         return x
 
+    def generate_pseudo_label(self, img, img_metas):
+        self.update_debug_state()
+        if self.debug:
+            self.debug_output = {
+                'Image': img,
+            }
+        out, _ = self.encode_decode(img, img_metas)
+        if self.debug:
+            self.debug_output.update(self.decode_head.debug_output)
+            self.debug_output['Pred'] = out.cpu().numpy()
+
+        return out
+
     def encode_decode(self, img, img_metas):
         """Encode images with backbone and decode into a semantic segmentation
         map of the same size as input."""
@@ -146,11 +159,19 @@ class EncoderDecoder(BaseSegmentor):
 
         return seg_logit
 
+    def update_debug_state(self):
+        self.debug_output = {}
+        if self.automatic_debug:
+            self.debug = (self.local_iter % self.debug_img_interval == 0)
+        self.decode_head.debug = self.debug
+        if self.with_auxiliary_head:
+            self.auxiliary_head.debug = self.debug
+
     def forward_train(self,
-                      stage,
-                      img,
-                      img_metas,
-                      gt_semantic_seg,
+                      stage=None,
+                      img=None,
+                      img_metas=None,
+                      gt_semantic_seg=None,
                       seg_weight=None,
                       return_feat=False):
         """Forward function for training.
